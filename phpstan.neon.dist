@@ -1,0 +1,15 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 8
+    phpVersion:
+        min: 70400
+        max: 80599
+    paths:
+        - brudcast-mail.php
+        - uninstall.php
+        - includes
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    tmpDir: .phpstan.cache

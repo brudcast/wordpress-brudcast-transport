@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<ruleset name="Brudcast Mail">
+    <description>WordPress Coding Standards for the Brudcast Mail plugin.</description>
+
+    <file>.</file>
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/.phpstan.cache/*</exclude-pattern>
+    <exclude-pattern>/tests/fixtures/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <config name="testVersion" value="7.4-"/>
+    <config name="minimum_wp_version" value="6.2"/>
+
+    <rule ref="WordPress"/>
+    <rule ref="PHPCompatibilityWP"/>
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="brudcast-mail"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="brudcast_mail"/>
+                <element value="BRUDCAST"/>
+            </property>
+        </properties>
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+
+    <!-- Test methods follow PHPUnit's naming, and tests may call PHP functions directly. -->
+    <rule ref="Squiz.Commenting.FunctionComment.Missing">
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions">
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.DB.PreparedSQL">
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.DB.DirectDatabaseQuery">
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.Files.FileName.InvalidClassFileName">
+        <exclude-pattern>/tests/*</exclude-pattern>
+    </rule>
+</ruleset>

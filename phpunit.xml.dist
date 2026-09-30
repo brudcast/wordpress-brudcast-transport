@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    beStrictAboutOutputDuringTests="true"
+    failOnWarning="true"
+>
+    <testsuites>
+        <testsuite name="Brudcast Mail">
+            <directory prefix="test-" suffix=".php">tests</directory>
+        </testsuite>
+    </testsuites>
+    <coverage>
+        <include>
+            <directory suffix=".php">includes</directory>
+        </include>
+    </coverage>
+</phpunit>

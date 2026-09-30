@@ -1,0 +1,55 @@
+{
+    "name": "brudcast/wordpress-brudcast-transport",
+    "description": "WordPress plugin that sends every wp_mail() email through the Brudcast mailing service",
+    "type": "wordpress-plugin",
+    "keywords": [
+        "brudcast",
+        "email",
+        "smtp",
+        "wordpress",
+        "wp_mail"
+    ],
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Brudcast Limited"
+        }
+    ],
+    "homepage": "https://github.com/brudcast/wordpress-brudcast-transport",
+    "support": {
+        "issues": "https://github.com/brudcast/wordpress-brudcast-transport/issues",
+        "source": "https://github.com/brudcast/wordpress-brudcast-transport"
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^9.6",
+        "roots/wordpress-no-content": ">=6.2",
+        "szepeviktor/phpstan-wordpress": "^2.0",
+        "wp-coding-standards/wpcs": "^3.1",
+        "wp-phpunit/wp-phpunit": ">=6.2",
+        "yoast/phpunit-polyfills": "^2.0 || ^3.0 || ^4.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:multisite": "WP_MULTISITE=1 phpunit",
+        "lint": "phpcs",
+        "format": "phpcbf",
+        "analyse": "phpstan analyse"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "7.4.33"
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

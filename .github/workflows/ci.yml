@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # The release workflow runs CI on the release commit before it deploys
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Coding standards and analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: "8.4"
+          coverage: none
+      - uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
+      - run: vendor/bin/phpcs
+      - run: vendor/bin/phpstan analyse --no-progress --error-format=github
+      - uses: DavidAnson/markdownlint-cli2-action@992badcdf24e3b8eb7e87ff9287fe931bcb00c6e # v20
+
+  test:
+    name: PHP ${{ matrix.php }} / WordPress ${{ matrix.wordpress }}${{ matrix.multisite && ' (multisite)' || '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: "7.4", wordpress: "6.2" }
+          - { php: "8.1", wordpress: "6.2" }
+          - { php: "7.4", wordpress: "latest" }
+          - { php: "8.1", wordpress: "latest" }
+          - { php: "8.4", wordpress: "latest" }
+          - { php: "8.4", wordpress: "latest", multisite: true }
+          - { php: "8.5", wordpress: "latest" }
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      WP_TESTS_DB_HOST: 127.0.0.1:3306
+      WP_MULTISITE: ${{ matrix.multisite && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, sodium, mbstring
+          coverage: none
+      - name: Pin the WordPress version
+        run: |
+          VERSION=${{ matrix.wordpress == 'latest' && '*' || format('{0}.*', matrix.wordpress) }}
+          composer require --dev --no-update --no-interaction \
+            "roots/wordpress-no-content:$VERSION" "wp-phpunit/wp-phpunit:$VERSION"
+      - uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
+      - run: composer show roots/wordpress-no-content wp-phpunit/wp-phpunit | grep -E '^(name|versions)'
+      - run: vendor/bin/phpunit
+
+  readme-changelog:
+    name: readme.txt changelog
+    # release-please's pull request bumps version.txt, and WordPress.org shows the changelog in
+    # readme.txt, which release-please doesn't write
+    if: startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check readme.txt has a changelog entry for the new version
+        run: |
+          VERSION=$(tr -d '[:space:]' < version.txt)
+          if ! sed -n '/^== Changelog ==/,/^== /p' readme.txt | grep -qxF "= $VERSION ="; then
+            echo "::error file=readme.txt::Add '= $VERSION =' under '== Changelog ==' in a docs: commit to main"
+            exit 1
+          fi
+
+  plugin-check:
+    name: WordPress.org Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build the plugin as WordPress.org will ship it
+        run: rsync -a --exclude-from=.distignore ./ build/brudcast-mail/
+      - uses: wordpress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1
+        with:
+          build-dir: build/brudcast-mail

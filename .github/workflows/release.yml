@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  release-please:
+    name: Release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          # A pull request opened with GITHUB_TOKEN doesn't trigger CI, so its checks never run
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+
+  ci:
+    name: CI
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to WordPress.org
+    needs: [release-please, ci]
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    environment: wordpress-org
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      - name: Set the stable tag
+        run: |
+          sed -i "s/^Stable tag: .*/Stable tag: $VERSION/" readme.txt
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+      - name: Check readme.txt has a changelog entry for this version
+        run: |
+          if ! sed -n '/^== Changelog ==/,/^== /p' readme.txt | grep -qxF "= $VERSION ="; then
+            echo "::error file=readme.txt::readme.txt has no '= $VERSION =' changelog entry"
+            exit 1
+          fi
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+      - uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: brudcast-mail
+          VERSION: ${{ needs.release-please.outputs.version }}
