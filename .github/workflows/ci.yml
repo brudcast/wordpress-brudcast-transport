@@ -72,7 +72,11 @@ jobs:
           composer require --dev --no-update --no-interaction \
             "roots/wordpress-no-content:$VERSION" "wp-phpunit/wp-phpunit:$VERSION"
       - uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
-      - run: composer show roots/wordpress-no-content wp-phpunit/wp-phpunit | grep -E '^(name|versions)'
+      - name: Show the WordPress version
+        run: |
+          for PACKAGE in roots/wordpress-no-content wp-phpunit/wp-phpunit; do
+            composer show "$PACKAGE" | grep -E '^(name|versions)'
+          done
       - run: vendor/bin/phpunit
 
   readme-changelog:
@@ -97,7 +101,9 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Build the plugin as WordPress.org will ship it
-        run: rsync -a --exclude-from=.distignore ./ build/brudcast-mail/
+        run: |
+          mkdir -p build
+          rsync -a --exclude-from=.distignore ./ build/brudcast-mail/
       - uses: wordpress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1
         with:
           build-dir: build/brudcast-mail
